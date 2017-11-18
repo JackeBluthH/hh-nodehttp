@@ -4,8 +4,7 @@ var Config = {
     PORT: 88,
 
     // 默认根目录
-    DOCUMENT_ROOT: 'd:/wwwroot/',
-    // DOCUMENT_ROOT: 'D:/wwwroot/boom-master/src',
+    DOCUMENT_ROOT: 'wwwroot/',
 
     JSON_INDEX: 'index.json',
 
@@ -18,12 +17,6 @@ var Config = {
     // 虚目录映射 virtulDir: realDir
     VPath: {
         'tools': 'e:/tools',
-        'online': 'E:/views/cplatform_online/dtonline',
-        'sp': 'E:/work/SP/apaas/framework/src/main/webapp',
-        'www.aliyun.com': 'D:/www.aliyun.com',
-        'ued': 'D:/wwwroot/dt-angle',
-        'react': 'E:/work/react/public',
-        "706": 'E:/views/706/server/client'
     }
 }
 
@@ -70,9 +63,8 @@ log.config({logLevel: Config.log_level});
 var upload = require('./libs/upload');
 upload.config({uploadPath: Config.uploadPath});
 
-// dtcenter demo
-require('./dtcenter/index');
-router.addVPath('dtcenter', 'E:/views/cplatform_online/manage/target/manage');
+// log server
+require('./libs/log-server');
 
 router
     .setDocumentRoot(Config.DOCUMENT_ROOT)

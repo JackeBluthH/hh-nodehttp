@@ -67,7 +67,7 @@ function MyRouter () {
             cfgDefaultUrl();
             http.createServer(function (req, res) {
                 HttpServerThread(oRouter, req, res);
-            }).listen(nPort);
+            }).listen(nPort, '0.0.0.0');
             log("info", "Server runing at port: " + nPort + ".");
         },
         redirectServer: checkAndOutputFile
@@ -112,7 +112,10 @@ function UploadFile (sBasePath) {
 function parseUrlPara(sParas) {
     var oPara = {};
 
-    sParas = sParas || '';
+    if (!sParas) {
+        return {};
+    }
+
     var a = sParas.split('&');
     for (var i = 0; i < a.length; i++) {
         var aPara = a[i].split('=');
@@ -256,18 +259,39 @@ function processMultipart (oContext, oPostParas) {
         log('debug', 'start next part');
     }
 }
+
+function isString(value) {return typeof value === 'string';}
+function isFunction(value) {return typeof value === 'function';}
+function isObject(value) {return value !== null && typeof value === 'object';}
 function dumpObj (obj, output) {
     output = output || console.log;
 
+    if (Array.isArray(obj)) {
+        output('This data is array');
+    } else if (isObject(obj)) {
+        output('This data is object');
+    }
+
+
     for (var key in obj) {
-        var val = '' + obj[key];
-        if (0 === val.indexOf('function')) {
-            var n = val.indexOf('{');
+        var val = obj[key];
+        if (isString(val)) {
+        } else if (isObject(val)) {
+            val = '[object]';
+        }else if (isFunction(val)) {
+            val = val.toString();
+            var n = (''+val).indexOf('{');
             val = val.substring(0, n);
         }
         var s = key + ' = ' + val;
         output(s);
     }
+}
+
+// IE10: Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; WOW64; Trident/6.0)
+// Chrome59: Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36
+function parseUserAgent (sUserAgent) {
+
 }
 
 function HttpServerThread (router, request, response) {
@@ -295,6 +319,8 @@ function HttpServerThread (router, request, response) {
 
     log("debug", 'HttpServerThread start');
     log('url', sUrl);
+    log('client', request.client.remoteAddress, request.headers['user-agent']);
+    oUrl.query = decodeURI(oUrl.query || '');
     request.params = parseUrlPara(oUrl.query);
     request.pathname = oUrl.pathname;
     request.urlInfo = oUrl;
@@ -322,6 +348,7 @@ function HttpServerThread (router, request, response) {
             // 数据接收完毕，分析并调用使用者
             if (!oContext.boundary) {
                 oPostParas = qs.parse(''+oContext.data);
+                oPostParas.rawData = oContext.data;
             }
 
             // 通知需要参数的调用者开始工作
@@ -329,6 +356,8 @@ function HttpServerThread (router, request, response) {
 
             oContext.status = 'end';
         });
+    } else {
+        oContext.status = 'end';
     }
 
     request.getPostParas = function (cb) {
@@ -373,7 +402,7 @@ function matchUrl (aUrl, sUrl) {
         } else if (sMatcher.indexOf(':') !== -1) {
             // paras match
         } else if (sMatcher === sUrl) {
-            log('debug', 'found 2');
+            log('debug', 'found');
             sFound = sMatcher;
             break;
         }
